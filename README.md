@@ -1,0 +1,1 @@
+kubernetes manifest for simple kudu cluster
