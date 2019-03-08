@@ -1,0 +1,44 @@
+---
+# Standard values
+env: dev
+name: kudu-kubernetes
+rev: latest
+
+config_replicas: 1
+
+defaults: &defaults
+  image: eu.gcr.io/strange-song-180105/official-kudu:latest-xenial
+  storageSizeGi: 100
+  storageClass: gold
+  nodeCpu: 2
+  nodeHeap: 1000
+  name_namespace: kudu-kubernetes
+  master_list: master-1,master-2,master-3
+
+tserver_context: &tserver_context
+  <<: *defaults
+  args_name: TSERVER_ARGS
+  ui_port: 8050
+  rpc_port: 7050
+  role: tserver
+
+master_context: &master_context
+  <<: *defaults
+  args_name: MASTER_ARGS
+  ui_port: 8051
+  rpc_port: 7051
+  role: master
+
+nodes:
+- name: master-1
+  <<: *master_context
+- name: master-2
+  <<: *master_context
+- name: master-3
+  <<: *master_context
+- name: tserver-1
+  <<: *tserver_context
+- name: tserver-2
+  <<: *tserver_context
+- name: tserver-3
+  <<: *tserver_context

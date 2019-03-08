@@ -1,0 +1,94 @@
+{{- define "kudu-kubernetes.node" -}}
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  namespace: {{ .name_namespace }}
+  name: {{ .name }}
+  labels:
+    active: "yes"
+    app: {{ .name }}
+    role: {{ .role }}
+spec:
+  serviceName: {{ .name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      active: "yes"
+      app: {{ .name }}
+      role: {{ .role }}
+  template:
+    metadata:
+      labels:
+        active: "yes"
+        app: {{ .name }}
+        role: {{ .role }}
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: {{ .name }}
+        resources:
+          requests:
+            cpu: "{{ .nodeCpu }}"
+            memory: "{{ .nodeHeap }}Mi"
+          limits:
+            cpu: "{{ .nodeCpu }}"
+            memory: "{{ .nodeHeap }}Mi"
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+              - IPC_LOCK
+        image: {{ .image }}
+        imagePullPolicy: IfNotPresent
+        args: ["{{ .role }}"]
+        env:
+        - name: NAMESPACE
+          value: "{{ .name_namespace }}"
+        - name: DATA_DIR
+          value: "/data"
+        - name: KUDU_HOME
+          value: "/opt/kudu"
+        - name: KUDU_MASTERS
+          value: {{ .master_list }}
+        - name: {{ .args_name }}
+          value: 
+            "--fs_wal_dir=/data/{{ .role }} \
+            --webserver_doc_root=/opt/kudu/www \
+            --logtostderr \
+            --use_hybrid_clock=false"
+        ports:
+        - containerPort: {{ .ui_port }}
+          name: ui
+        - containerPort: {{ .rpc_port }}
+          name: rpc
+        livenessProbe:
+          httpGet:
+            path: "/"
+            port: {{ .ui_port }}
+          initialDelaySeconds: 120
+          timeoutSeconds: 1
+        readinessProbe:
+          timeoutSeconds: 1
+          httpGet:
+            path: "/"
+            port: {{ .ui_port }}
+        volumeMounts:
+        - name: storage-{{ .role }}
+          mountPath: /data
+          readOnly: false
+  volumeClaimTemplates:
+  - metadata:
+      name: storage-{{ .role }}
+      annotations:
+        volume.beta.kubernetes.io/storage-class: {{ .storageClass }}
+
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: "{{ .storageSizeGi }}Gi"
+        limits:
+          storage: "{{ add 1 .storageSizeGi }}Gi"
+{{- end -}}

@@ -1,0 +1,4 @@
+{{- $root := . -}}
+{{ range $node := .Values.nodes }}
+{{ template "kudu-kubernetes.node" $node }}
+{{- end }}

@@ -1,0 +1,20 @@
+{{- range $node := .Values.nodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $node.name }}
+  namespace: {{ $node.name_namespace }}
+spec:
+  ports:
+    - port: {{ $node.rpc_port }}
+      name: rpc
+      targetPort: {{ $node.rpc_port }}
+    - port: {{ $node.ui_port }}
+      name: ui
+      targetPort: {{ $node.ui_port }}
+  selector:
+    active: "yes"
+    app: {{ $node.name }}
+    role: {{ $node.role }}
+{{- end }}
